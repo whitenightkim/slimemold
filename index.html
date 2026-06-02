@@ -401,6 +401,53 @@ var DEFAULT={
       "image/24.12.14.png"
     ],
     "audios": []
+  },
+  "t12": {
+    "date": "",
+    "title": "",
+    "body": "",
+    "sc": "",
+    "published": false,
+    "images": [],
+    "audios": []
+  },
+  "t13": {
+    "date": "2025.02.08",
+    "title": "감응의 패턴, 진동",
+    "body": "황색망사점균을 루페로 확대해보았다. 황색망사점균은 나뭇가지와 눈꽃처럼 방사형 구조로 뻗어나간다. 방사형 구조는 최단거리와 최대확산의 균형 때문에 생겨난 구조. 방사형은 자원(양분, 신호, 에너지)의 분산과 순환의 최적화된 형태. \n프랙탈 구조(fractal) - 전체구조와 부분구조가 닮아 있는 패턴, 즉 자기유사성, 간단한 구조의 반복이지만 복사-붙여넣기가 아니라 환경조건에 따라 조정되면서 반복되는 패턴. \n\n팔레스타인 집회에 오랜만에 갔다. 이스라엘 대사관 앞에서(이곳은 건물과 건물 사이라 유달리 바람이 매섭다..) 연대발언을 듣는데 맞은 편에서 태극기를 든 한 사람이 확성기로 '빨갱이'라고 소리쳤다. 이해할 수는 없지만 같이 살아가는 존재들, 부정할 수 없는 존재들. 이 곳에 있어도 저 멀리 팔레스타인 사람들을 연결 짓고 함께 목소리를 내는 사람들의 '감응' 감각에 대해 생각해본다. \n소수자들의 연결은 어떤 진동과 패턴의 모습일까?",
+    "sc": "",
+    "published": true,
+    "images": [
+      "image/25.02.08.jpeg"
+    ],
+    "audios": []
+  },
+  "t14": {
+    "date": "",
+    "title": "",
+    "body": "",
+    "sc": "",
+    "published": false,
+    "images": [],
+    "audios": []
+  },
+  "t15": {
+    "date": "",
+    "title": "",
+    "body": "",
+    "sc": "",
+    "published": false,
+    "images": [],
+    "audios": []
+  },
+  "t16": {
+    "date": "",
+    "title": "",
+    "body": "",
+    "sc": "",
+    "published": false,
+    "images": [],
+    "audios": []
   }
 };
 var tcDefault={"main": "황색망사점균과 나의 배양일지", "sub": "점균과 나의 일상이 연루되어가는 기록. 2024년 12월부터"};
@@ -500,7 +547,14 @@ function saveE(){
   Promise.all([Promise.all(Array.from(imgF).map(rImg)),Promise.all(Array.from(audF).map(rAud))]).then(function(res){
     var ex=window.DATA[curId]||{};
     window.DATA[curId]={date:date,title:title,body:body,sc:'',published:pub,images:res[0].length?res[0]:(ex.images||[]),audios:ex.audios||[]};
-    saveData();closeE();openV(curId);btn.textContent='저장';btn.disabled=false;
+    saveData();closeE();openV(curId);
+  // 툴팁 갱신
+  document.querySelectorAll('.trig').forEach(function(el){
+    var id=el.getAttribute('data-id');
+    var d=window.DATA&&window.DATA[id];
+    if(d&&d.date) el.setAttribute('data-date',d.date);
+    else el.removeAttribute('data-date');
+  });btn.textContent='저장';btn.disabled=false;
   }).catch(function(e){alert('파일 오류. Chrome에서 로컬 파일로 열어주세요.');btn.textContent='저장';btn.disabled=false;});
 }
 
@@ -593,11 +647,12 @@ function showToast(msg){var t=document.getElementById('toast');t.textContent=msg
 // 패닝 & 줌
 function applyT(){scene.style.transform='translate('+tx+'px,'+ty+'px) scale('+scale+')';}
 window.addEventListener('load',function(){
-  // 트리거에 날짜 툴팁 주입
+  // 트리거에 날짜 툴팁 주입 (localStorage 반영 후)
   document.querySelectorAll('.trig').forEach(function(el){
     var id=el.getAttribute('data-id');
     var d=window.DATA&&window.DATA[id];
     if(d&&d.date) el.setAttribute('data-date',d.date);
+    else el.removeAttribute('data-date');
   });
   var m=window.innerWidth<768;scale=m?window.innerWidth/1920:Math.min(0.7,window.innerWidth/1920*0.92);tx=(window.innerWidth-1920*scale)/2;ty=(window.innerHeight-1080*scale)/2;applyT();});
 document.body.addEventListener('mousedown',function(e){if(e.target.closest('.trig,.cb,.ov,#tceov,#aov,#fsgrp,#abadge,#lbox,#aentry,#tcard'))return;if(document.body.classList.contains('cmode'))return;dragging=true;sx=e.clientX-tx;sy=e.clientY-ty;document.body.classList.add('grab');});
