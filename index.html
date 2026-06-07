@@ -445,7 +445,7 @@ var DEFAULT={
   "t16": {
     "date": "2025.02.19",
     "title": "엉켜가는 마음",
-    "body": "희망뚜벅기에 참여했다. 한국 옵티컬 고용승계를 위해 구미에서 여의도 국회로 가는 여정에 하루 참여했다. 아침 일찍 기차를 타고 조치원역으로 가서 사람들과 준비운동을 하고 전위역까지 걷는 일정이었다. 캄캄밴드 친구들과 출발 전에 연주를 하고 전위역에 도착해서 연주를 하기로 했다. 구미 옵티컬 불타버린 공장 옥상에 고공농성을 하고 있는 두 여성 노동자가 있다. 사람들과 같이 걸었다. 그 두여성 노동자(박정혜, 소현숙)가 매일을 고공에서 견디는 것처럼 매일을 걷는 사람들. 매서운 바람과 빠른 걸음 걸이를 쫒아가느라 눈이 시리다. 이렇게 뻗어 나간 움직임이 어떻게 가닿고 엉킬 수 있을까? \n\n내가 좋은 사람이라서, 정의로운 사람이라서 이곳에 있는 것이 아니다. 나도 그럴 수 있다, 나도 그 상황에 처할 수 있다는 동질감, 그리고 지금 현 상황에 대한 답답함을 해소하고 싶은 마음. \n누구와 엉키고 뻗어나고 싶은 걸까? 이렇게 뻗어나가면 어떤 모양새로 그려질까?",
+    "body": "희망뚜벅기에 참여했다. 한국 옵티컬 고용승계를 위해 구미에서 여의도 국회까지 매일을 걷는 여정이다. 그 여정에 하루 참여했다. 아침 일찍 기차를 타고 조치원역으로 가서 사람들과 걷기 전 준비 운동과 약속문을 읽고 전위역까지 걷는 일정이었다. 캄캄밴드 친구들과 출발 전에 연주를 하고 전위역에 도착해서 연주를 하기로 했다. 구미 옵티컬 불타버린 공장 옥상에 고공농성을 하고 있는 두 여성 노동자가 있다. 사람들과 같이 걸었다. 그 두여성 노동자(박정혜, 소현숙)가 매일을 고공에서 견디는 것처럼 매일을 걷는 사람들. 매서운 바람과 빠른 걸음 걸이를 쫒아가느라 눈이 시리다. 이렇게 뻗어 나간 움직임이 어떻게 가닿고 엉킬 수 있을까? \n\n내가 좋은 사람이라서, 정의로운 사람이라서 이곳에 있는 것이 아니다. 나도 그럴 수 있다, 나도 그 상황에 처할 수 있다는 동질감, 그리고 지금 현 상황에 대한 답답함을 해소하고 싶은 마음. \n누구와 엉키고 뻗어나고 싶은 걸까? 이렇게 뻗어나가면 어떤 모양새로 그려질까?",
     "sc": "",
     "published": true,
     "images": [
@@ -504,9 +504,15 @@ function onTrig(id,e){
 // 보기
 function openV(id){
   var m=window.DATA[id];
-  document.getElementById('vdate').textContent=m.date||'';
-  document.getElementById('vtitle').textContent=m.title||'';
-  document.getElementById('vbody').textContent=m.body||'';
+  var vdateEl=document.getElementById('vdate');
+  vdateEl.textContent=m.date||'';
+  vdateEl.style.display=m.date?'':'none';
+  var vtitleEl=document.getElementById('vtitle');
+  vtitleEl.textContent=m.title||'';
+  vtitleEl.style.display=m.title?'':'none';
+  var vbodyEl=document.getElementById('vbody');
+  vbodyEl.textContent=m.body||'';
+  vbodyEl.style.display=m.body?'':'none';
   document.getElementById('vpub').textContent=m.published===false?'● 비공개':'';
   var med=document.getElementById('vmed');med.innerHTML='';
   if(m.images&&m.images.length){var g=document.createElement('div');g.className='igrid';m.images.forEach(function(s){var i=document.createElement('img');i.src=s;i.onclick=function(){openLB(s);};g.appendChild(i);});med.appendChild(g);}
@@ -541,7 +547,7 @@ function closeE(){document.getElementById('eov').classList.remove('open');}
 document.getElementById('eov').addEventListener('click',function(e){if(e.target===document.getElementById('eov'))closeE();});
 function previewF(inp,tid){var el=document.getElementById(tid);el.innerHTML='';Array.from(inp.files).forEach(function(f){var d=document.createElement('div');d.className='fn';d.textContent='▸ '+f.name+' ('+Math.round(f.size/1024)+'KB)';el.appendChild(d);if(f.type.startsWith('image/')){var img=document.createElement('img');img.style.cssText='max-width:100%;max-height:100px;margin-top:4px;border:1px solid var(--bdr);display:block';var r=new FileReader();r.onload=function(e){img.src=e.target.result;};r.readAsDataURL(f);el.appendChild(img);}});}
 function saveE(){
-  var title=document.getElementById('eti').value.trim();if(!title){alert('제목을 입력해주세요.');return;}
+  var title=document.getElementById('eti').value.trim();
   var dr=document.getElementById('edt').value,date=dr?dr.replace(/-/g,'.'):'';
   var body=document.getElementById('ebo').value.trim(),pub=document.getElementById('epub').checked;
   var imgF=document.getElementById('eimg').files,audF=[];
