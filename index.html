@@ -160,8 +160,11 @@ body.cmode #chint{display:block}
 @media(max-width:767px){.trig[data-date]::after{display:none}}
 
 /* 사진만 있을 때 크게 */
-.igrid.igrid-solo img{width:100%;height:auto;object-fit:contain;border-radius:4px;}
+.igrid.igrid-solo img{width:100%;height:auto;max-height:calc(82vh - 60px);object-fit:contain;border-radius:4px;border:none;}
 .igrid.igrid-solo{display:block;}
+#vpop.photo-only{padding:0;overflow:hidden;border-radius:2px;}
+#vpop.photo-only #vmed{margin:0;}
+#vpop.photo-only .igrid.igrid-solo img{border-radius:0;max-height:82vh;width:100%;}
 </style>
 </head>
 <body>
@@ -504,7 +507,8 @@ function onTrig(id,e){
   if(document.body.classList.contains('cmode'))return;
   e.stopPropagation();curId=id;
   var m=window.DATA[id];
-  if(!m||!m.title){if(isAdm)openE(id);return;}
+  var hasContent=m&&(m.title||(m.images&&m.images.length)||(m.audios&&m.audios.length)||m.body);
+  if(!hasContent){if(isAdm)openE(id);return;}
   if(m.published===false&&!isAdm)return;
   openV(id);
 }
@@ -512,6 +516,9 @@ function onTrig(id,e){
 // 보기
 function openV(id){
   var m=window.DATA[id];
+  var onlyPhotos=!m.title&&!m.body&&!m.date&&(m.images&&m.images.length>0);
+  var vpop=document.getElementById('vpop');
+  if(onlyPhotos){vpop.classList.add('photo-only');}else{vpop.classList.remove('photo-only');}
   var vdateEl=document.getElementById('vdate');
   vdateEl.textContent=m.date||'';
   vdateEl.style.display=m.date?'':'none';
@@ -525,10 +532,9 @@ function openV(id){
   var med=document.getElementById('vmed');med.innerHTML='';
   if(m.images&&m.images.length){var g=document.createElement('div');g.className='igrid'+((!m.body&&!m.title)?' igrid-solo':'');m.images.forEach(function(s){var i=document.createElement('img');i.src=s;i.onclick=function(){openLB(s);};g.appendChild(i);});med.appendChild(g);}
   if(m.audios&&m.audios.length){m.audios.forEach(function(s){var a=document.createElement('audio');a.src=s;a.controls=true;med.appendChild(a);});}
-  
   document.getElementById('vov').classList.add('open');
 }
-function closeV(){document.getElementById('vov').classList.remove('open');}
+function closeV(){document.getElementById('vov').classList.remove('open');document.getElementById('vpop').classList.remove('photo-only');}
 document.getElementById('vov').addEventListener('click',function(e){if(e.target===document.getElementById('vov'))closeV();});
 
 // 편집
