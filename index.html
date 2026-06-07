@@ -158,6 +158,10 @@ body.cmode #chint{display:block}
 }
 .trig[data-date]:hover::after{opacity:1}
 @media(max-width:767px){.trig[data-date]::after{display:none}}
+
+/* 사진만 있을 때 크게 */
+.igrid.igrid-solo img{width:100%;height:auto;max-height:420px;object-fit:contain;}
+.igrid.igrid-solo{display:block;}
 </style>
 </head>
 <body>
@@ -519,7 +523,7 @@ function openV(id){
   vbodyEl.style.display=m.body?'':'none';
   document.getElementById('vpub').textContent=m.published===false?'● 비공개':'';
   var med=document.getElementById('vmed');med.innerHTML='';
-  if(m.images&&m.images.length){var g=document.createElement('div');g.className='igrid';m.images.forEach(function(s){var i=document.createElement('img');i.src=s;i.onclick=function(){openLB(s);};g.appendChild(i);});med.appendChild(g);}
+  if(m.images&&m.images.length){var g=document.createElement('div');g.className='igrid'+((!m.body&&!m.title)?' igrid-solo':'');m.images.forEach(function(s){var i=document.createElement('img');i.src=s;i.onclick=function(){openLB(s);};g.appendChild(i);});med.appendChild(g);}
   if(m.audios&&m.audios.length){m.audios.forEach(function(s){var a=document.createElement('audio');a.src=s;a.controls=true;med.appendChild(a);});}
   
   document.getElementById('vov').classList.add('open');
