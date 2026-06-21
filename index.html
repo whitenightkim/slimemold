@@ -176,6 +176,23 @@ body.adm #vpop.photo-only .ebtn{display:inline-block !important;position:absolut
 #vpop.photo-only #vpub{display:none !important;}
 </style>
 </head>
+<script type="module">
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+  import { getDatabase, ref, set, onValue } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-database.js";
+  const firebaseConfig = {
+    apiKey: "AIzaSyBj99E7j48a8_SFWh9VSqEUMDuz_V5eqaY",
+    authDomain: "slimemold-diary.firebaseapp.com",
+    databaseURL: "https://slimemold-diary-default-rtdb.firebaseio.com",
+    projectId: "slimemold-diary",
+    storageBucket: "slimemold-diary.firebasestorage.app",
+    messagingSenderId: "666499451251",
+    appId: "1:666499451251:web:0c930434bc24cb7521dd06"
+  };
+  const fbApp = initializeApp(firebaseConfig);
+  const fbDb = getDatabase(fbApp);
+  window.fbSaveData = function(data){ set(ref(fbDb, 'memos'), data); };
+  window.fbListenData = function(callback){ onValue(ref(fbDb, 'memos'), function(snap){ callback(snap.val()); }); };
+</script>
 <body>
 <div id="abadge" onclick="logoutAdmin()">관리자 모드 · 로그아웃</div>
 <div id="chint">📍 좌표 확인 모드 — 클릭하면 복사</div>
@@ -320,6 +337,31 @@ var D={};
 })();
 window.DATA=D;
 
+// Firebase 실시간 동기화 (PC/모바일 공통 데이터)
+function refreshTrigDates(){
+  document.querySelectorAll('.trig').forEach(function(el){
+    var id=el.getAttribute('data-id');
+    var d=window.DATA&&window.DATA[id];
+    if(d&&d.date) el.setAttribute('data-date',d.date);
+    else el.removeAttribute('data-date');
+  });
+}
+(function waitForFirebase(){
+  if(window.fbListenData){
+    window.fbListenData(function(remote){
+      if(remote){
+        Object.keys(remote).forEach(function(k){window.DATA[k]=remote[k];});
+        refreshTrigDates();
+        if(typeof curId==='string'&&document.getElementById('vov')&&document.getElementById('vov').classList.contains('open')){
+          openV(curId);
+        }
+      }
+    });
+  } else {
+    setTimeout(waitForFirebase,200);
+  }
+})();
+
 // 이미지 fetch
 fetch('media.json').then(function(r){return r.json();}).then(function(M){
   Object.keys(M).forEach(function(k){
@@ -415,14 +457,8 @@ function saveE(){
   Promise.all([Promise.all(Array.from(imgF).map(rImg)),Promise.all(Array.from(audF).map(rAud))]).then(function(res){
     var ex=window.DATA[curId]||{};
     window.DATA[curId]={date:date,title:title,body:body,sc:'',published:pub,images:res[0].length?res[0]:(ex.images||[]),audios:ex.audios||[]};
-    saveData();closeE();openV(curId);
-  // 툴팁 갱신
-  document.querySelectorAll('.trig').forEach(function(el){
-    var id=el.getAttribute('data-id');
-    var d=window.DATA&&window.DATA[id];
-    if(d&&d.date) el.setAttribute('data-date',d.date);
-    else el.removeAttribute('data-date');
-  });btn.textContent='저장';btn.disabled=false;
+  saveData();closeE();openV(curId);
+  refreshTrigDates();btn.textContent='저장';btn.disabled=false;
   }).catch(function(e){alert('파일 오류. Chrome에서 로컬 파일로 열어주세요.');btn.textContent='저장';btn.disabled=false;});
 }
 
@@ -478,7 +514,15 @@ function switchBg(){
 }
 
 // 저장
-function saveData(){try{localStorage.setItem(SK,JSON.stringify(window.DATA));showToast('저장 ✓');}catch(e){showToast('⚠️ 저장 공간 부족');}}
+function saveData(){
+  try{localStorage.setItem(SK,JSON.stringify(window.DATA));}catch(e){}
+  if(window.fbSaveData){
+    window.fbSaveData(window.DATA);
+    showToast('저장 ✓ (모든 기기에 반영됨)');
+  } else {
+    showToast('저장 ✓ (이 기기에만)');
+  }
+}
 
 // 관리자
 function openA(){document.getElementById('pwinp').value='';document.getElementById('pwerr').textContent='';document.getElementById('aov').classList.add('open');setTimeout(function(){document.getElementById('pwinp').focus();},100);}
