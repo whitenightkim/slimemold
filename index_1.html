@@ -1,0 +1,592 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0,maximum-scale=1.0,user-scalable=no">
+<title>황색망사점균 배양일지</title>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@300;400;500;700&family=Space+Mono@0,400;1,400&display=swap" rel="stylesheet">
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+:root{--bg:#eaefe4;--pbg:#e4eb9f;--bdr:#3b3b00;--ink:#40210f;--mut:#7a4a2a;--red:#c0392b;--fs:14px;--tc-fs:21px}
+html,body{width:100%;height:100%;overflow:hidden;background:var(--bg);font-family:"Noto Sans KR",sans-serif;font-size:var(--fs);cursor:grab;user-select:none}
+body.grab{cursor:grabbing}
+#scene{position:absolute;width:1920px;height:1080px;transform-origin:0 0}
+#bgimg{position:absolute;inset:0;width:1920px;height:1080px;pointer-events:none;transition:opacity 1.4s ease}
+/* 트리거 */
+.trig{position:absolute;transform:translate(-50%,-100%);cursor:pointer;z-index:10;transition:transform .2s,filter .2s;transform-origin:50% 100%}
+.trig svg{display:block}
+.trig-tri{width:26px;height:26px}
+.trig-tri:hover{transform:translate(-50%,-100%) scale(1.3);filter:drop-shadow(0 3px 8px rgba(192,57,43,.5))}
+.tfill{fill:var(--red)}
+.trig-pin{width:22px;height:44px}
+.trig-pin:hover{transform:translate(-50%,-100%) scale(1.2);filter:drop-shadow(0 3px 8px rgba(26,18,10,.4))}
+.pfill{fill:#2a1a0e}
+.trig-cir{width:22px;height:22px}
+.trig-cir:hover{transform:translate(-50%,-50%) scale(1.3);filter:drop-shadow(0 3px 8px rgba(192,57,43,.5))}
+.cfill{fill:#fcbe24}
+/* 좌표 */
+#cbadge{position:absolute;pointer-events:none;z-index:50;background:rgba(64,33,15,.82);color:#f5f0e8;font-family:"Space Mono",monospace;font-size:11px;padding:3px 8px;border-radius:2px;display:none;white-space:nowrap}
+body.cmode #cbadge{display:block}
+body.cmode #scene{cursor:crosshair}
+/* 오버레이 */
+.ov{position:fixed;inset:0;background:rgba(15,8,5,.5);z-index:200;display:none;align-items:center;justify-content:center;backdrop-filter:blur(3px)}
+.ov.open{display:flex}
+.pbox{background:rgba(228,235,159,.78);border:1px solid rgba(40,38,10,.35);border-radius:2px;position:relative;animation:pi .16s ease;backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);box-shadow:2px 3px 18px rgba(40,38,10,.1)}
+.pbox::before{content:"";position:absolute;inset:5px;border:1px dashed rgba(40,38,10,.2);pointer-events:none;border-radius:1px}
+@keyframes pi{from{transform:scale(.95) translateY(8px);opacity:0}to{transform:scale(1) translateY(0);opacity:1}}
+.pcls{position:absolute;top:14px;right:18px;background:none;border:none;cursor:pointer;font-family:"Space Mono",monospace;font-size:16px;color:var(--ink);opacity:.35;transition:opacity .15s;z-index:1}
+.pcls:hover{opacity:.8}
+/* 보기 팝업 */
+#vpop{width:500px;max-height:82vh;overflow-y:auto;padding:40px 44px 36px}
+#vpop::-webkit-scrollbar{width:4px}
+#vpop::-webkit-scrollbar-thumb{background:rgba(64,33,15,.3)}
+#vmed{margin-bottom:18px}
+#vmed .igrid{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:8px}
+#vmed .igrid img{width:calc(50% - 3px);max-height:160px;object-fit:cover;border:1px solid var(--bdr);cursor:zoom-in;transition:opacity .15s}
+#vmed .igrid img:hover{opacity:.85}
+#vmed audio{width:100%;margin-bottom:6px}
+#vmed iframe{border:none;width:100%;height:80px;margin-bottom:6px}
+#vdate{font-family:"Space Mono",monospace;font-size:calc(var(--fs)*.78);color:var(--mut);letter-spacing:.08em;margin-bottom:12px}
+#vtitle{font-size:calc(var(--fs)*1.25);font-weight:700;color:var(--ink);line-height:1.45;margin-bottom:16px;padding-bottom:13px;border-bottom:1px solid rgba(64,33,15,.18)}
+#vbody{font-size:var(--fs);line-height:2;color:var(--ink);white-space:pre-wrap;margin-bottom:20px;font-weight:400}
+#vpub{font-family:"Space Mono",monospace;font-size:9px;color:var(--red);margin-bottom:10px;display:none}
+body.adm #vpub{display:block}
+.ebtn{display:none;margin-top:16px;font-family:"Space Mono",monospace;font-size:calc(var(--fs)*.75);color:var(--mut);background:none;border:1px dashed var(--mut);padding:5px 12px;cursor:pointer;letter-spacing:.05em;transition:background .15s}
+.ebtn:hover{background:rgba(64,33,15,.08)}
+body.adm .ebtn{display:inline-block}
+/* 편집 팝업 */
+#epop{width:500px;max-height:88vh;overflow-y:auto;padding:40px 44px 36px}
+#epop h2{font-size:calc(var(--fs)*.92);font-weight:700;margin-bottom:22px;color:var(--ink);font-family:"Space Mono",monospace;letter-spacing:.04em}
+.fl{font-family:"Space Mono",monospace;font-size:calc(var(--fs)*.75);color:var(--mut);letter-spacing:.06em;display:block;margin-bottom:5px}
+.fg{margin-bottom:15px}
+#epop input[type=text],#epop input[type=date],#epop textarea{width:100%;background:rgba(210,218,90,.4);border:1px solid rgba(64,33,15,.35);padding:8px 11px;font-family:"Noto Sans KR",sans-serif;font-size:var(--fs);color:var(--ink);outline:none;resize:vertical}
+#epop input:focus,#epop textarea:focus{border-color:var(--ink)}
+#epop textarea{min-height:100px}
+.flab{display:inline-block;padding:6px 13px;border:1px dashed rgba(64,33,15,.45);font-family:"Space Mono",monospace;font-size:calc(var(--fs)*.75);color:var(--mut);cursor:pointer;transition:background .15s}
+.flab:hover{background:rgba(64,33,15,.08)}
+input[type=file]{display:none}
+.fn{font-family:"Space Mono",monospace;font-size:calc(var(--fs)*.75);color:var(--mut);margin-top:4px}
+.brow{display:flex;gap:8px;justify-content:flex-end;margin-top:10px}
+.bcn{padding:6px 16px;background:none;border:1px solid rgba(64,33,15,.3);font-family:"Space Mono",monospace;font-size:calc(var(--fs)*.8);cursor:pointer;color:var(--mut);border-radius:1px}
+.bsv{padding:6px 18px;background:var(--ink);color:var(--pbg);border:1px solid var(--ink);font-family:"Space Mono",monospace;font-size:calc(var(--fs)*.8);cursor:pointer;transition:opacity .15s;border-radius:1px}
+.bsv:hover{opacity:.75}
+.eixwrap{position:relative;display:inline-block}
+.eixwrap img{width:76px;height:76px;object-fit:cover;border:1px solid var(--bdr);display:block}
+.delbtn{position:absolute;top:-6px;right:-6px;width:18px;height:18px;border-radius:50%;background:var(--red);color:#fff;border:none;font-size:11px;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:transform .15s}
+.delbtn:hover{transform:scale(1.15)}
+.eaudwrap{display:flex;align-items:center;gap:8px;font-family:"Space Mono",monospace;font-size:10px;color:var(--mut)}
+.daudbtn{background:none;border:1px solid var(--red);color:var(--red);font-family:"Space Mono",monospace;font-size:10px;padding:2px 7px;cursor:pointer}
+/* 타이틀 카드 */
+#tcard{position:absolute;left:60px;top:60px;width:320px;background:rgba(228,235,159,.68);border:1px solid rgba(40,38,10,.3);border-radius:2px;padding:28px 30px 24px;cursor:default;z-index:10;backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);box-shadow:2px 3px 16px rgba(40,38,10,.08)}
+body.adm #tcard{cursor:pointer}
+body.adm #tcard:hover{filter:drop-shadow(0 4px 12px rgba(59,59,0,.2))}
+.tc-main{font-family:"Noto Sans KR",sans-serif;font-size:var(--tc-fs);font-weight:700;color:var(--ink);line-height:1.6;margin-bottom:10px;white-space:pre-wrap}
+.tc-sub{font-family:"Noto Sans KR",sans-serif;font-size:calc(var(--tc-fs)*.78);font-weight:400;color:var(--mut);line-height:1.75;white-space:pre-wrap}
+.tc-sub:empty{display:none}
+.tc-hint{display:none;font-family:"Space Mono",monospace;font-size:9px;color:var(--mut);margin-top:12px;opacity:.6}
+body.adm .tc-hint{display:block}
+/* 타이틀 편집 팝업 */
+#tceov{position:fixed;inset:0;background:rgba(15,8,5,.5);z-index:300;display:none;align-items:center;justify-content:center;backdrop-filter:blur(3px)}
+#tceov.open{display:flex}
+#tcepop{background:rgba(228,235,159,.92);border:1px solid rgba(40,38,10,.35);border-radius:2px;width:540px;max-height:88vh;overflow-y:auto;padding:40px 44px 36px;position:relative;animation:pi .16s ease}
+#tcepop::before{content:"";position:absolute;inset:5px;border:1px dashed rgba(40,38,10,.18);pointer-events:none;border-radius:1px}
+#tcepop h2{font-size:calc(var(--fs)*.92);font-weight:700;margin-bottom:22px;color:var(--ink);font-family:"Space Mono",monospace;letter-spacing:.04em}
+/* 관리자 팝업 */
+#aov{position:fixed;inset:0;background:rgba(15,8,5,.5);z-index:300;display:none;align-items:center;justify-content:center;backdrop-filter:blur(3px)}
+#aov.open{display:flex}
+#apop{background:rgba(228,235,159,.92);border:1px solid rgba(40,38,10,.35);border-radius:2px;width:360px;padding:36px 40px 30px;position:relative;box-shadow:2px 3px 16px rgba(40,38,10,.08);animation:pi .16s ease}
+#apop::before{content:"";position:absolute;inset:5px;border:1px dashed rgba(40,38,10,.18);pointer-events:none;border-radius:1px}
+#apop h2{font-size:calc(var(--fs)*.92);font-weight:700;margin-bottom:6px;color:var(--ink);font-family:"Space Mono",monospace}
+#apop p{font-size:calc(var(--fs)*.8);color:var(--mut);margin-bottom:20px;line-height:1.6}
+#pwinp{width:100%;background:rgba(210,218,90,.4);border:1px solid rgba(64,33,15,.35);padding:9px 12px;font-family:"Space Mono",monospace;font-size:var(--fs);color:var(--ink);outline:none;letter-spacing:.1em}
+#pwerr{font-family:"Space Mono",monospace;font-size:calc(var(--fs)*.75);color:var(--red);margin-top:6px;min-height:16px}
+/* 라이트박스 */
+#lbox{position:fixed;inset:0;background:rgba(0,0,0,.88);z-index:500;display:none;align-items:center;justify-content:center;cursor:zoom-out}
+#lbox.open{display:flex}
+#limg{max-width:90vw;max-height:90vh;object-fit:contain}
+/* 관리자 뱃지 */
+#abadge{position:fixed;top:20px;right:26px;display:none;font-family:"Space Mono",monospace;font-size:10px;color:var(--mut);opacity:.6;cursor:pointer;z-index:100}
+#abadge:hover{opacity:1}
+body.adm #abadge{display:block}
+/* 컨트롤 */
+#ctrl{position:fixed;bottom:26px;left:26px;display:flex;gap:5px;z-index:100;flex-wrap:wrap;max-width:420px}
+.cb{height:34px;min-width:34px;background:var(--ink);color:var(--pbg);border:none;cursor:pointer;font-family:"Space Mono",monospace;font-size:14px;display:flex;align-items:center;justify-content:center;padding:0 8px;opacity:.8;transition:opacity .15s}
+.cb:hover{opacity:1}
+.cb.act{background:#7a2010;opacity:1}
+.acb{display:none}
+body.adm .acb{display:flex}
+#fsgrp{display:flex;align-items:center;height:34px}
+#fslbl{background:rgba(64,33,15,.15);font-family:"Space Mono",monospace;font-size:10px;color:var(--ink);padding:0 8px;height:100%;display:flex;align-items:center;white-space:nowrap}
+#fsval{background:rgba(64,33,15,.1);font-family:"Space Mono",monospace;font-size:11px;color:var(--ink);padding:0 6px;height:100%;display:flex;align-items:center;min-width:34px;justify-content:center}
+/* 힌트 */
+#hint{position:fixed;bottom:26px;right:26px;font-family:"Space Mono",monospace;font-size:10px;color:var(--mut);opacity:.45;z-index:100}
+#chint{position:fixed;top:22px;right:26px;font-family:"Space Mono",monospace;font-size:10px;color:var(--red);display:none;z-index:100}
+body.cmode #chint{display:block}
+/* 토스트 */
+#toast{position:fixed;bottom:80px;left:50%;transform:translateX(-50%) translateY(20px);background:var(--ink);color:var(--pbg);font-family:"Space Mono",monospace;font-size:11px;padding:8px 20px;opacity:0;transition:opacity .3s,transform .3s;pointer-events:none;z-index:999}
+#toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+/* 관리자 진입점 */
+#aentry{position:fixed;bottom:28px;right:100px;font-size:18px;color:rgba(64,33,15,.2);cursor:pointer;z-index:50;line-height:1;user-select:none;transition:color .2s}
+#aentry:hover{color:rgba(64,33,15,.5)}
+/* 모바일 */
+@media(max-width:767px){
+  .cb{height:42px;min-width:42px;font-size:16px}
+  #ctrl{bottom:16px;left:16px;gap:4px}
+  #hint{display:none}
+  #aentry{bottom:18px;right:16px;font-size:22px}
+  #vpop,#epop{width:92vw;padding:28px 22px 24px}
+  .pbox{max-height:85vh}
+  .trig-tri{width:32px;height:32px}
+  .trig-pin{width:26px;height:52px}
+  .trig-cir{width:30px;height:30px}
+  #tcard{width:200px;padding:18px 20px 16px}
+}
+
+/* 날짜 툴팁 */
+.trig[data-date]::after{
+  content:attr(data-date);
+  position:absolute;
+  bottom:calc(100% + 6px);
+  left:50%;
+  transform:translateX(-50%);
+  background:rgba(64,33,15,.82);
+  color:#f5f0e8;
+  font-family:"Space Mono",monospace;
+  font-size:10px;
+  padding:3px 8px;
+  border-radius:2px;
+  white-space:nowrap;
+  pointer-events:none;
+  opacity:0;
+  transition:opacity .15s;
+}
+.trig[data-date]:hover::after{opacity:1}
+@media(max-width:767px){.trig[data-date]::after{display:none}}
+
+/* 사진만 있을 때 크게 */
+.igrid.igrid-solo{display:block;}
+#vmed .igrid.igrid-solo img{width:100% !important;height:auto !important;max-height:calc(82vh - 100px) !important;object-fit:contain !important;border-radius:4px;border:1px solid var(--bdr);cursor:zoom-in;}
+#vpop.photo-only{padding:0;overflow:hidden;}
+#vpop.photo-only::before{display:none;}
+#vpop.photo-only #vdate{display:none !important;}
+#vpop.photo-only #vmed{margin:0;}
+#vpop.photo-only .pcls{background:rgba(0,0,0,.35);color:#fff;border-radius:50%;width:28px;height:28px;display:flex;align-items:center;justify-content:center;top:10px;right:10px;opacity:.7;}
+#vpop.photo-only .ebtn{display:none;}
+body.adm #vpop.photo-only .ebtn{display:inline-block !important;position:absolute;bottom:12px;left:16px;z-index:10;background:rgba(228,235,159,.9);}
+#vpop.photo-only #vpub{display:none !important;}
+</style>
+</head>
+<script type="module">
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+  import { getDatabase, ref, set, onValue } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-database.js";
+  const firebaseConfig = {
+    apiKey: "AIzaSyBj99E7j48a8_SFWh9VSqEUMDuz_V5eqaY",
+    authDomain: "slimemold-diary.firebaseapp.com",
+    databaseURL: "https://slimemold-diary-default-rtdb.firebaseio.com",
+    projectId: "slimemold-diary",
+    storageBucket: "slimemold-diary.firebasestorage.app",
+    messagingSenderId: "666499451251",
+    appId: "1:666499451251:web:0c930434bc24cb7521dd06"
+  };
+  const fbApp = initializeApp(firebaseConfig);
+  const fbDb = getDatabase(fbApp);
+  window.fbSaveData = function(data){ set(ref(fbDb, 'memos'), data); };
+  window.fbListenData = function(callback){ onValue(ref(fbDb, 'memos'), function(snap){ callback(snap.val()); }); };
+</script>
+<body>
+<div id="abadge" onclick="logoutAdmin()">관리자 모드 · 로그아웃</div>
+<div id="chint">📍 좌표 확인 모드 — 클릭하면 복사</div>
+<div id="scene">
+  <img id="bgimg" src="bg.png" data-bg2="bg2.png" draggable="false" alt="">
+  <div id="cbadge"></div>
+  <!-- 타이틀 카드 -->
+  <div id="tcard" onclick="onTcard()">
+    <div class="tc-main"></div>
+    <div class="tc-sub"></div>
+    <div class="tc-hint">✎ 클릭하여 편집</div>
+  </div>
+  <!-- 트리거 -->
+  <div class="trig trig-tri" style="left:804px;top:585px" data-id="t1" onclick="onTrig('t1',event)"><svg viewBox="0 0 28 28"><polygon points="14,3 27,25 1,25" class="tfill"/></svg></div>
+  <div class="trig trig-tri" style="left:841px;top:646px" data-id="t2" onclick="onTrig('t2',event)"><svg viewBox="0 0 28 28"><polygon points="14,3 27,25 1,25" class="tfill"/></svg></div>
+  <div class="trig trig-tri" style="left:731px;top:599px" data-id="t3" onclick="onTrig('t3',event)"><svg viewBox="0 0 28 28"><polygon points="14,3 27,25 1,25" class="tfill"/></svg></div>
+  <div class="trig trig-pin" style="left:517px;top:372px" data-id="t4" onclick="onTrig('t4',event)"><svg viewBox="0 0 22 44"><circle cx="11" cy="11" r="10" class="pfill"/><rect x="10" y="20" width="2" height="24" class="pfill" rx="1"/></svg></div>
+  <div class="trig trig-tri" style="left:856px;top:581px" data-id="t5" onclick="onTrig('t5',event)"><svg viewBox="0 0 28 28"><polygon points="14,3 27,25 1,25" class="tfill"/></svg></div>
+  <div class="trig trig-tri" style="left:772px;top:635px" data-id="t6" onclick="onTrig('t6',event)"><svg viewBox="0 0 28 28"><polygon points="14,3 27,25 1,25" class="tfill"/></svg></div>
+  <div class="trig trig-tri" style="left:711px;top:396px" data-id="t7" onclick="onTrig('t7',event)"><svg viewBox="0 0 28 28"><polygon points="14,3 27,25 1,25" class="tfill"/></svg></div>
+  <div class="trig trig-tri" style="left:782px;top:334px" data-id="t8" onclick="onTrig('t8',event)"><svg viewBox="0 0 28 28"><polygon points="14,3 27,25 1,25" class="tfill"/></svg></div>
+  <div class="trig trig-tri" style="left:820px;top:289px" data-id="t9" onclick="onTrig('t9',event)"><svg viewBox="0 0 28 28"><polygon points="14,3 27,25 1,25" class="tfill"/></svg></div>
+  <div class="trig trig-tri" style="left:737px;top:423px" data-id="t10" onclick="onTrig('t10',event)"><svg viewBox="0 0 28 28"><polygon points="14,3 27,25 1,25" class="tfill"/></svg></div>
+  <div class="trig trig-tri" style="left:800px;top:380px" data-id="t11" onclick="onTrig('t11',event)"><svg viewBox="0 0 28 28"><polygon points="14,3 27,25 1,25" class="tfill"/></svg></div>
+  <div class="trig trig-tri" style="left:906px;top:459px" data-id="t12" onclick="onTrig('t12',event)"><svg viewBox="0 0 28 28"><polygon points="14,3 27,25 1,25" class="tfill"/></svg></div>
+  <div class="trig trig-tri" style="left:956px;top:416px" data-id="t13" onclick="onTrig('t13',event)"><svg viewBox="0 0 28 28"><polygon points="14,3 27,25 1,25" class="tfill"/></svg></div>
+  <div class="trig trig-tri" style="left:979px;top:435px" data-id="t14" onclick="onTrig('t14',event)"><svg viewBox="0 0 28 28"><polygon points="14,3 27,25 1,25" class="tfill"/></svg></div>
+  <div class="trig trig-tri" style="left:1008px;top:415px" data-id="t15" onclick="onTrig('t15',event)"><svg viewBox="0 0 28 28"><polygon points="14,3 27,25 1,25" class="tfill"/></svg></div>
+  <div class="trig trig-tri" style="left:963px;top:472px" data-id="t16" onclick="onTrig('t16',event)"><svg viewBox="0 0 28 28"><polygon points="14,3 27,25 1,25" class="tfill"/></svg></div>
+  <div class="trig trig-tri" style="left:732px;top:526px" data-id="t18" onclick="onTrig('t18',event)"><svg viewBox="0 0 28 28"><polygon points="14,3 27,25 1,25" class="tfill"/></svg></div>
+  <div class="trig trig-tri" style="left:727px;top:512px" data-id="t19" onclick="onTrig('t19',event)"><svg viewBox="0 0 28 28"><polygon points="14,3 27,25 1,25" class="tfill"/></svg></div>
+  <div class="trig trig-tri" style="left:1144px;top:419px" data-id="t20" onclick="onTrig('t20',event)"><svg viewBox="0 0 28 28"><polygon points="14,3 27,25 1,25" class="tfill"/></svg></div>
+  <div class="trig trig-tri" style="left:1111px;top:466px" data-id="t21" onclick="onTrig('t21',event)"><svg viewBox="0 0 28 28"><polygon points="14,3 27,25 1,25" class="tfill"/></svg></div>
+  <div class="trig trig-tri" style="left:1155px;top:454px" data-id="t22" onclick="onTrig('t22',event)"><svg viewBox="0 0 28 28"><polygon points="14,3 27,25 1,25" class="tfill"/></svg></div>
+  <div class="trig trig-tri" style="left:1099px;top:494px" data-id="t23" onclick="onTrig('t23',event)"><svg viewBox="0 0 28 28"><polygon points="14,3 27,25 1,25" class="tfill"/></svg></div>
+  <div class="trig trig-tri" style="left:983px;top:374px" data-id="t24" onclick="onTrig('t24',event)"><svg viewBox="0 0 28 28"><polygon points="14,3 27,25 1,25" class="tfill"/></svg></div>
+  <div class="trig trig-cir" style="left:658px;top:554px" data-id="t26" onclick="onTrig('t26',event)"><svg viewBox="0 0 22 22"><circle cx="11" cy="11" r="10" class="cfill"/></svg></div>
+  <div class="trig trig-tri" style="left:1186px;top:426px" data-id="t27" onclick="onTrig('t27',event)"><svg viewBox="0 0 28 28"><polygon points="14,3 27,25 1,25" class="tfill"/></svg></div>
+  <div class="trig trig-tri" style="left:1178px;top:385px" data-id="t28" onclick="onTrig('t28',event)"><svg viewBox="0 0 28 28"><polygon points="14,3 27,25 1,25" class="tfill"/></svg></div>
+</div>
+<!-- 보기 팝업 -->
+<div id="vov" class="ov">
+  <div id="vpop" class="pbox">
+    <button class="pcls" onclick="closeV()">×</button>
+    <div id="vmed"></div>
+    <div id="vpub"></div>
+    <div id="vdate"></div>
+    <div id="vtitle"></div>
+    <div id="vbody"></div>
+    <button class="ebtn" onclick="openE(curId)">✎ 수정하기</button>
+  </div>
+</div>
+<!-- 편집 팝업 -->
+<div id="eov" class="ov">
+  <div id="epop" class="pbox">
+    <button class="pcls" onclick="closeE()">×</button>
+    <h2 id="eh">새 메모</h2>
+    <div class="fg"><label class="fl">날짜</label><input type="date" id="edt"></div>
+    <div class="fg"><label class="fl">제목</label><input type="text" id="eti" placeholder="메모 제목"></div>
+    <div class="fg"><label class="fl">내용</label><textarea id="ebo" rows="6" placeholder="관찰 기록, 생각, 감정..."></textarea></div>
+    <div class="fg">
+      <label class="fl">사진</label>
+      <div id="eixs" style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:8px"></div>
+      <label class="flab" for="eimg">+ 이미지 업로드</label>
+      <input type="file" id="eimg" accept="image/*" multiple onchange="previewF(this,'imgfn')">
+      <div id="imgfn"></div>
+      <div style="display:flex;gap:6px;margin-top:6px;align-items:center">
+        <input type="text" id="eimgpath" placeholder="또는 경로 입력 (예: images/t1_01.jpg)" style="flex:1;font-size:11px;padding:4px 8px;border:1px solid rgba(64,33,15,.25);border-radius:2px;background:rgba(255,255,255,.4);font-family:Space Mono,monospace">
+        <button class="flab" onclick="addImgPath()" style="white-space:nowrap">추가</button>
+      </div>
+    </div>
+    <div class="fg">
+      <label class="fl">소리</label>
+      <div id="eauds" style="display:flex;flex-direction:column;gap:4px;margin-bottom:8px"></div>
+      <div style="display:flex;gap:6px;margin-top:2px;align-items:center">
+        <input type="text" id="eaudpath" placeholder="경로 입력 (예: audio/t10_01.mp3)" style="flex:1;font-size:11px;padding:4px 8px;border:1px solid rgba(64,33,15,.25);border-radius:2px;background:rgba(255,255,255,.4);font-family:Space Mono,monospace">
+        <button class="flab" onclick="addAudPath()" style="white-space:nowrap">추가</button>
+      </div>
+      <div id="audfn"></div>
+    </div>
+    <div class="fg" style="display:flex;align-items:center;gap:10px">
+      <label class="fl" style="margin:0">공개 여부</label>
+      <label style="display:flex;align-items:center;gap:6px;cursor:pointer;font-family:Space Mono,monospace;font-size:11px;color:var(--mut)"><input type="checkbox" id="epub" style="width:14px;height:14px;accent-color:var(--ink)"> 방문자에게 공개</label>
+    </div>
+    <div class="brow">
+      <button class="bcn" onclick="closeE()">취소</button>
+      <button class="bsv" id="esavbtn" onclick="saveE()">저장</button>
+    </div>
+  </div>
+</div>
+<!-- 타이틀 편집 팝업 -->
+<div id="tceov">
+  <div id="tcepop">
+    <button class="pcls" onclick="closeTCE()">×</button>
+    <h2>타이틀 카드 수정</h2>
+    <div class="fg"><label class="fl">주제목 (굵게)</label><textarea id="tcemain" rows="3" placeholder="굵은 제목"></textarea></div>
+    <div class="fg"><label class="fl">부제목 (작은 글씨)</label><textarea id="tcesub" rows="3" placeholder="부제목, 설명 등"></textarea></div>
+    <div class="brow">
+      <button class="bcn" onclick="closeTCE()">취소</button>
+      <button class="bsv" onclick="saveTCE()">저장</button>
+    </div>
+  </div>
+</div>
+<!-- 관리자 로그인 -->
+<div id="aov">
+  <div id="apop">
+    <button class="pcls" onclick="closeA()">×</button>
+    <h2>관리자 로그인</h2>
+    <p>비밀번호를 입력하면<br>편집 모드가 활성화됩니다.</p>
+    <input type="password" id="pwinp" placeholder="비밀번호" onkeydown="if(event.key==='Enter')checkPw()">
+    <div id="pwerr"></div>
+    <div class="brow" style="margin-top:16px">
+      <button class="bcn" onclick="closeA()">취소</button>
+      <button class="bsv" onclick="checkPw()">확인</button>
+    </div>
+  </div>
+</div>
+<!-- 라이트박스 -->
+<div id="lbox" onclick="closeLB()"><img id="limg"></div>
+<!-- 컨트롤 -->
+<div id="ctrl">
+  <button class="cb" onclick="zoom(.1)">+</button>
+  <button class="cb" onclick="zoom(-.1)">−</button>
+  <button class="cb" onclick="resetV()" style="font-size:11px">⌂</button>
+  <button class="cb acb" id="bgbtn" onclick="switchBg()" style="font-size:10px;padding:0 10px;background:#3a5a30">배경 전환</button>
+  <button class="cb acb act" id="ccbtn" onclick="toggleCoord()" style="font-size:10px;padding:0 10px">좌표 확인</button>
+  <button class="cb acb" onclick="exportD()" style="font-size:10px;padding:0 10px;background:#5a6010">내보내기</button>
+  <button class="cb acb" onclick="resetLS()" style="font-size:10px;padding:0 10px;background:#7a2010">저장소 초기화</button>
+</div>
+<div id="hint">드래그 · 스크롤로 탐색</div>
+<div id="toast"></div>
+<div id="aentry" onclick="openA()" title="관리자">•</div>
+<script>
+var ADMIN_PW='slime2024', SK='slimemold_v20', TK='slimemold_title', FK='slimemold_fs', TCK='slimemold_tc', BGK='slimemold_bg';
+var DEFAULT={"t1": {"body": "아가 (agar) 한천가루, 채소류에서 추출한 다당류로 무한가사리에서 추출. 미생물학 실험에서 배지(토대,땅)의 한 성분으로 자주 사용.\n\n동결건조된 황색망사점균을 깨우는 작업을 시작했다. 깨어날 수 있을까? 귀로는 뉴스를 계속 들으면서 한천을 따뜻한 물로 개고 농도를 확인해준다.\n내일이면 황색망사점균이 깨어 있으려나,\n내일이면 뉴스에선 어떤 소식이 들려올까?", "date": "2024.12.05", "images": ["image/24.12.05.png"], "published": true, "sc": "", "title": "황색망사점균 배양 1일차"}, "t2": {"body": "곰팡이나 다른 진균처럼 포자로 퍼지는 것이 아니라 A->B로 이동하는 것이 보인다. 방사형이 좀 더 커졌고 촉수처럼 퍼져나간다. \n\n2024.12.07 윤석열 탄핵집회, 여의도 국회의사당에 갔다. 여의도 국회의사당 앞에 발딛을 틈이 없이 가득했다. 친구들을 만날 수도 없었다. 전화가 터지지도 않아서 전혀 알지도 못하는 옆 사람에게 의지해서 서있었다. 다들 아이돌 응원봉과 깃발을 들고 서있었다. 나도 '윤석열 탄핵하고 맘편히 산에 가자'라는 깃발을 들고 나갔다. 젊은 친구들 옆에 서서 의사당 앞으로 계속 나갔다. 목이 터져라 국힘의 표결을 외쳤으나 국힘은 결국 표결장에 들어오지 않았다. 화가 너무 났다. 그래서 쉽사리 집으로 돌아올 수 없었다.", "date": "2025.12.07", "images": ["image/24.12.07.png"], "published": true, "sc": "", "title": "황색망사점균 배양 3일차"}, "t4": {"body": "2024년 12월 3일 22:30 윤석열의 계엄령 선포 \n이후 공포와 분노의 감정이 몸에 남아 깊은 잠에 들지 못하고 새벽에도 불쑥불쑥 깨서 뉴스를 확인하게 되었다.", "date": "2024.12.03", "published": true, "sc": "", "title": "2024.12.03.22:30 계엄령"}, "t5": {"body": "오전 9시 정도에 일어나서 상자를 열어보니 황색망사점균이 깨어나서 방사형으로 뻗어나가는 것이 보인다. 생각보다 빨리 움직인다. 하루만에 움직임의 폭이 넓다. 동물적인 움직임에 가깝다는 생각이 든다.\n\n팔레스타인 집회에 나가 연주를 했다. 이제 집회에 나가면 모든 구호에 윤석열 탄핵이 같이 붙는다. '우리의 평화를 파괴하는 윤석열과 네타냐후는 지구에서 꺼져라'라는 손 피켓을 보았다. 오늘도 뉴스를 듣느라 해야 할일들이 손에 잡히지 않는다.", "date": "2024.12.06", "published": true, "sc": "", "title": "황색망사점균 배양 2일차"}, "t6": {"body": "황색망사점균이 패트리접시를 가득 채우다 못해서 접시를 넘어섰다. 네트워크가 겹겹이 겹쳐진다. \n\n전농(전국농민회)에서 트렉터를 끌고 서울로 올라오다 남태령에서 경찰에 의해 막혔고 사람들이 남태령으로 연대하러 갔다. 나는 다른 일로 집회에 가지도 못하고 남태령으로 연대하러 간다는 사람들의 트윗을 보았다. 전농TV로 남태령 상황을 지켜보며 사람들의 발언들을 들었다. 사람들이 남태령에 있는 사람들을 위해 난방버스를 보내고 배달 음식 보냈다. 사람들이 트렉터에 올라 자신을 퀴어라고 밝혔고, 자신의 위치성과 장애인과 농부를 자연스럽게 연결지었다. 나는 발언을 듣는 내내 울컥했다. 어떻게 저렇게 용기 있을 수 있을까? \n\n그렇게 새벽을 보내고 아침이 지나고 더 많은 사람들이 남태령으로 향하고 오후에나 도로를 가로 막던 경찰차가 길을 열었다. 한강진으로 전농의 트렉터가 온다는 소식을 듣고 한강진으로 갔다. 트렉터를 환영하는 사람들의 행렬로 가득했고 '임을 위한 행진곡'과 '다시 만난 세계'가 차례대로 흘러나왔다. 정대만 깃발이 휘날렸다.", "date": "2024.12.22", "images": ["image/24.12.22.png"], "published": true, "sc": "", "title": "황색망사점균 배양 17일차"}, "t7": {"body": "황색망사점균을 조금 떠서 다른 배양지에 옮겨주었다. 패트리 접시가 금방 오염되서 자주자주 다른 배양지에 옮겨주는 것이 좋을 것 같다. 이번 배양지는 수분이 많았는지 agar(한천)이 다소 묽다. \n\n윤석열이 탄핵된 후로 윤석열 체포를 위한 집회를 나갔다. 관저에 가까운 한강진역으로 갔다. 한강진역에 태극기부대들이 시비를 건다는 트윗을 보고 잔뜩 긴장했다. 6호선에 조용히 아무색도 드러내지 않던 사람들이 한강진역에서 내리면 가방에서 태극기를 꺼내는 사람과 조용히 윤석열 탄핵 피켓을 꺼내는 사람들로 나뉜다. 한강진역 안에서 태극기부대가 탄핵반대를 외치고 있었다. 귀도 막고, 눈도 흐릿하게 하고 서둘러 역 밖으로 나갔다. 탄핵집회 군단을 만나 볼보빌딩까지 걸어갔다. 가게에서 식사하던 사람들이 무지개 깃발과 윤석열 체포 피켓을 흔들어 주었다. 혼자 집회에 갈때에는 맘에 드는 깃발을 뒤쫓아간다. 오늘은 '말티즈는 참지 않지 협회' 깃발을 쫒아 볼보빌딩 앞 까지 걸어갔다. 광화문에서 집회하던 사람들도 합류해서 볼보빌딩 앞 도로가 사람들로 가득해졌다. 사람들의 목소리로 도로가 점유 당할 때, 묘한 카타르시스가 있다. 집회에 혼자 나올땐 멈칫 멈칫하게 되는데 나오기만 하면 혼자인 것이 문제되지 않는다. 오래 서 있으니 발가락이 시리다. 방한화와 솜바지를 사야겠다. 쉽게 끝나지 않을 싸움이다. 몸이 얼어 서둘러 집으로 돌아갔다.", "date": "2025.01.04", "published": true, "sc": "", "title": "한강진역에서"}, "t8": {"body": "황색망사점균은 의사소통을 진동으로 한다고 책에서 보았다. 움직임은 진동을 만든다. 진동이 연결되어 있음, 존재하고 있음을 증명하는 것일까? 내가 가진 도구들로는 실시간 움직임과 진동을 관찰할 수가 없다. 그러한 미세진동까지 내가 보고 싶은 것일까? \n\n평소 집회에 나가는 편이지만 이번 해 처럼 매주 집회에 나가거나 찾아간 것은 드문일이다. 어떠한 환경은 물질의 구성요소와 형태를 변화시킨다. 같은 물질이라도 환경은 물질을 변화시키고 다른 존재가 되게 만든다. 이제 캄캄밴드 친구들과 같이 매주 집회에 나게 되었다. 행진할 때 악기를 들고 사람들을 따라간다. 혼자 멀뚱멀뚱 서 있을 때보다 무언가를 하면서 걷는 것이 맘이 편하다. 연주를 잘하는지 아닌지는 중요하지 않다. 클라리넷을 잡은 손가락이 추위에 곱는다. 지나가던 사람들이 핫팩을 손에 쥐어주었다. 고마웠다.", "date": "2025.01.18", "images": ["image/25.01.18.jpg"], "published": true, "sc": "", "title": "집회에서"}, "t9": {"body": "황색망사점균의 활동이 줄어들고 거뭇거뭇해진다. 냄새도 향긋한 냄새보다 오트밀이 부패하는 냄새가 난다. 이번에 배양한 황색망사점균은 22일정도 패트리접시에서 살아남았다. 약 한달을 주기로 황색망사점균의 삶과 죽음을 지켜보고 있다. \n\n매일매일 화가나는 뉴스를 듣고 있다. 아침 7시부터 저녁 12시까지 매 시간 시작하는 뉴스를 듣고 트위터에 계속해서 들어가 길에서 일어나는 일을 체크하다. 재밌는 짤들을 모으고 저장한다. 그것이 유일한 탈출구인 것처럼. 해외에 있는 사람들이 돈을 모아 간식차를 집회장에 보내고 있다. 비건인을 위한 비건감튀를 준비한다는 트위터를 보았다. 사람들이 각자의 자리에서 자신이 할 수 있는 일을 한다. 윤석열의 말도 안되는 계엄령으로 나는 다시 트위터를  하게 되었고 트위터에선 거리의 소식을 목소리를 들을 수있다. 그래서 놓을 수가 없다.....", "date": "2025.01.26", "images": ["image/25.01.26.png"], "published": true, "sc": "", "title": "트위터에서"}, "t10": {"audios": ["audio/25-01-05.mp3"], "body": "배양지가 묽어서 그런지(습기가 많은 환경) 황색망사점균의 퍼짐이 고운 진흙처럼 퍼진다. 네트워크 모양이 촘촘하다. 선의 느낌보다 면의 느낌으로 퍼진다는 생각이 든다. \n\n어제 집회가 끝나고 집에 돌아와서도 유튜브 라이브를 틀어놓고 잠이 들었다. 새벽에 눈이 많이 왔다. 사람들이 함박눈을 맞으며 볼보빌딩 앞에 앉아 있었다. 집으로 돌아온 것이 미안하다. 누군가는 앞줄에 있다. 그 '앞줄'에 있는 이는 취약해진다. 그 취약성을 망설지 않는 사람들이 고맙다. 사람들이 은박담요 하나 둘러쓰고 거리에 있는데 윤석열이 관저에서 따뜻하게 있다는 생각에 화가난다. 일을 마치고 오후에 부랴부랴 한강진역으로 갔다. 사람들이 만들어놓은 작은 눈사람들이 곳곳에 있다. 눈사람도 윤석열 체포를 외치고 있다. 길거리에서 보여지는 모뉴먼트들이 재밌다. 움직이고 있다. 숨쉬고 있다는 생각이 든다.", "date": "2025.01.05", "images": ["image/25.01.05.png"], "published": true, "sc": "", "title": "볼보빌딩 앞에서"}, "t11": {"body": "묽은 형태로 오트밀의 사이와 사이를 잇는 황색망사점균. 황색망사점균의 활동이 활발하고 배지가 오염되지 않을 때 특유의 시트러스하고 상쾌한 냄새가 난다. 그 냄새의 정체를 잘모르다가 여러 패트리 접시에 점균을 배양을 하고 상자에 넣어두었다가 상자를 열면 그 냄새가 확퍼진다. \n그 냄새의 정체는 뭘까?\n\n이제 토요일이 되면 오전에 할일들을 마쳐놓고 주섬주섬 집회에 나갈 채비를 한다. 721번을 타고 광화문역에서 내리면 태극기 부대를 뚫고 경복궁 동십자각 앞으로 간다. 광화문역에서부터 긴장되어 있던 마음이 사람들의 깃발이 보이면 누그러지기 시작한다. 토요일 오후 시간대를 비워두는 것이 나에게 큰 일과가 되었다. 따뜻한 물과 방한화, 바지를 두개 겹쳐입고 동십자각으로 가서 사람들의 연대발언을 듣다가 행진을 한다. 오늘은 명동 한국은행 앞까지 걸어갔다. 오로씨를 만나 같이 걸었다. 음악을 들으며 구호를 외치며 같이 걸었다. 전장연과 장애여성공감은 늘 집회에 있다. 그들을 쫒아간다. 앞줄에 선자들.", "date": "2025.01.11", "images": ["image/25.01.11.png"], "published": true, "sc": "", "title": "동십자각 앞에서"}, "t3": {"body": "황색망사점균이 오트밀을 덮쳐서 먹어버리면 녹듯이 사라져버리고 다른 오트밀로 이동한 이동하면 지나온 흔적만 보인다. 배양지가 자주 오염되니 배양지를 계속 갈아주는 것이 좋다는 조언을 들었다. 그리고 확산세가 빨라서 9cm 패트리접시가 좁게 느껴질 정도다. 다른 배양지를 계속 만들어봐야겠다. \n\n윤석열 탄핵집회에 친구들과 악기를 들고 나갔다. 너무 추워서 손이 곱을 것 같다. 저번주 보다 사람이 더 많아져서 국회의사당에서 국회의사당 역까지 사람들의 머리로 가득했다. 재밌는 깃발들이 많다. 모두가 같은 신념을 가진 것처럼 보이지만 페미니즘과 소수자 이야기를 발언하면 야유와 함께 호응이 줄어드는게 느껴진다. 모두가 균질하지 않다. 윤석열 탄핵안이 통과되었다. 안도했다.", "date": "2024.12.14", "images": ["image/24.12.14.png"], "published": true, "sc": "", "title": "황색망사점균9일차"}, "t12": {"body": "오늘 배양상자를 열었더니 황색망사점균의 네트워크가 너무 아름다웠다. 네트워크가 층층히 쌓여서 저마다 굵기와 형태가 패트리 접시 가득 펼쳐져있었다. 어떤 의사소통을 나눈 것일까? 어떤 온도와 습도가 이런 의사소통의 형태를 만들었을까? 형태의 아름다움에 매료되어 한참을 쳐다보았다.\n\n경복궁 동십자각에 모여 연대발언을 듣고 안국을 거쳐 명동으로, 명동에서 시청으로 가는 긴 행진을 따라간다. 걸어가면서 부는 클라리넷 연주는 제법 익숙해졌다. 예전보다 숨이 덜찬다. 사람들이 구호를 외치는 것처럼, 임을 위한 행진곡, 단결한 민중은 결코 패배하지 않는다!(El pueblo unido jamás será vencido!), 바위처럼 등을 부른다. 이 거리에 모인 사람들의 네트워크를 그린다면 어떤 모양일까? \n집회가 장기화되면서 행진에는 사람들이 저마다의 이름으로 모인다. 민주노총을 비롯한 노동단체, 농민, 정당들, 일반 시민들, 장애여성공감과 전장연 뒤로 소수자를 지지하는 사람들, 혹은 자신을 소수자라고 말하는 사람들, 덕후들, 팔레스타인 깃발을 든 사람들이 함께 걸어간다.\n말벌이라고 불리는 친구들의 가방과 옷에는 늘 많은 인형과 뺏지가 달려 있다. 무지개, 민주노총, 팔레스타인 깃발 등이 가방에 가득 채워져있다.  말벌 친구들은 연결됨을 주저하지 않는다. 지치지도 않는다. (그렇게 보인다) 주저하지 않는 연결감.\n\n정확하게 이름 붙여질 수 없는 사람들 사이에서 연주를 할 때 마음이 편안하다. 나의 연주도 나도 정확하게 이름 붙여지지 않는 지대에 있다.", "date": "2025.02.01", "images": ["image/25.02.01.png"], "published": true, "sc": "", "title": "네트워크의 모양"}, "t13": {"body": "황색망사점균을 루페로 확대해보았다. 황색망사점균은 나뭇가지와 눈꽃처럼 방사형 구조로 뻗어나간다. 방사형 구조는 최단거리와 최대확산의 균형 때문에 생겨난 구조. 방사형은 자원(양분, 신호, 에너지)의 분산과 순환의 최적화된 형태. \n프랙탈 구조(fractal) - 전체구조와 부분구조가 닮아 있는 패턴, 즉 자기유사성, 간단한 구조의 반복이지만 복사-붙여넣기가 아니라 환경조건에 따라 조정되면서 반복되는 패턴. \n\n탄핵집회에 가기 전 오랜만에 팔레스타인 집회에 갔다. 이스라엘 대사관 앞에서(이곳은 건물과 건물 사이라 유달리 바람이 매섭다..늘 엉덩이가 시렵다) 연대발언을 듣는데 맞은 편에서 태극기를 든 한 사람이 확성기로 우리에게 '빨갱이'라고 소리쳤다. 이해할 수는 없지만 같이 살아가야하는 사람들, 부정한다고 지워지지 않는 사람들과 이 곳에 있어도 저 멀리 팔레스타인 사람들을 연결 짓고 함께 목소리를 내는 사람들이 한국, 서울에 같이 살아간다. \n나는 이곳에 있으면서도 저 멀리를 연결 짓는 사람들의 '감응' 대해 생각한다. 직접 닿을 수 없고, 같은 언어를 쓰지 않고, 같은 땅에 서 있지 않아도 어떤 고통은 이곳의 몸을 흔든다. 소수자들의 연결은 어떤 진동과 패턴의 모습일까?", "date": "2025.02.08", "images": ["image/25.02.08.jpeg"], "published": true, "sc": "", "title": "감응의 패턴, 진동"}, "t14": {"body": "", "date": "", "images": ["image/25.02.15_2.jpg"], "published": true, "sc": "", "title": ""}, "t15": {"body": "", "date": "", "images": ["image/25.02.15_1.jpg"], "published": true, "sc": "", "title": ""}, "t17": {"body": "", "date": "", "published": false, "sc": "", "title": ""}, "t18": {"body": "", "date": "", "images": ["image/24.12.01.jpg"], "published": true, "sc": "", "title": ""}, "t19": {"body": "", "date": "", "images": ["image/24.12.02.jpg"], "published": true, "sc": "", "title": ""}, "t16": {"body": "희망뚜벅기에 참여했다. 한국 옵티컬 고용승계를 위해 구미에서 여의도 국회까지 매일을 걷는 여정이다. 그 여정에 하루 참여했다. 아침 일찍 기차를 타고 조치원역으로 가서 사람들과 걷기 전 준비 운동과 약속문을 읽고 전위역까지 걷는 일정이었다. 캄캄밴드 친구들과 출발 전에 연주를 하고 전위역에 도착해서 연주를 하기로 했다. 구미 옵티컬 불타버린 공장 옥상에 고공농성을 하고 있는 두 여성 노동자가 있다. 사람들과 같이 걸었다. 그 두여성 노동자(박정혜, 소현숙)가 매일을 고공에서 견디는 것처럼 매일을 걷는 사람들. 매서운 바람과 빠른 걸음 걸이를 쫒아가느라 눈이 시리다. 이렇게 뻗어 나간 움직임이 어떻게 가닿고 엉킬 수 있을까? \n\n내가 좋은 사람이라서, 정의로운 사람이라서 이곳에 있는 것이 아니다. 나도 그럴 수 있다, 나도 그 상황에 처할 수 있다는 동질감, 그리고 지금 현 상황에 대한 답답함을 해소하고 싶은 마음. \n누구와 엉키고 뻗어나고 싶은 걸까? 이렇게 뻗어나가면 어떤 모양새로 그려질까?", "date": "2025.02.19", "images": ["image/25.02.19.JPG"], "published": true, "sc": "", "title": "엉켜가는 마음"}, "t21": {"body": "어느순간 부터 점균이 사는 배지(땅)를 내맘대로 비율을 맞춰서 하다보니 과학적인 비율보다 그날에 나의 시간과 기분에 따라 배지의 환경이 달라진다. 어느날은 너무 얇게 되기도 하고, 너무 묽게 되기도 하고 땅을 다지는 일을 대충하게 된다. 그것도 변수로 작용한다. 이번 황색망사점균은 어떤 이유인지는 잘 모르겠지만 조직 밀도가 쫀쫀하게 퍼져나간다.   배지의 밀도가 높아서 일까? 점균의 색상도 다른 황색망사점균보다 짙다. 배지가 평소보다 단단했거나, 수분이 적었거나, 오트밀의 위치와 양이 변수일 수도 있다. 혹은 배양 시간이 지나며 배지의 산도와 습도가 변했고, 그 변화가 점균의 색과 조직감에 영향을 주었을지도 모른다. 변수의 나날들. \n\n오늘은 여성의 날이다. 보라색으로 단장하고 경복궁 동십자각으로 향했다. 보라색 깃발 물결들이 경복궁 앞 도로를 가로 질렀다. 이번 응원봉 집회, 빛의 혁명에는 20-30대 여성들의 참여가 두드러진다고 미디어에서 떠들어댄다. 집회현장엔 늘 여성들이 있었다. 갑자기 나타난게 아니다.  내재되어 있던 것이 어느 순간 더 큰 밀도와 색으로 드러났을 뿐이다.\n\n여성의 날 행진이 끝나고 밥을 먹고 있는데 윤석열이 풀려났다는  뉴스를 보았다. 정말 커다란 변수가 드러났다.", "date": "2025.03.08", "images": ["image/25.03.08.jpg"], "published": true, "sc": "", "title": "변수의 나날들"}, "t23": {"body": "황색망사점균은 20-30일 약 한달의 주기로 확산, 점유, 넘어섬(침범), 노화, 죽음으로 가는 싸이클을 패턴으로, 리듬으로 움직인다. 같은 패트리 접시에 30일 이상 살게 하고 싶어서 (더 다양한 변화를 한 플레이트에서 보고 싶어서) 배지의 오염을 최소화하고 습도, 먹이 등을 조절해보고 있지만 그것이 쉽지 않다. 다른 배지로 옮기면 같은 물질이라도 다른 모양과 다른 네트워크를 보여준다. 이동성은 황색망사점균의 특징일지도 모르겠다. \n\n구미에서 시작된 희망 뚜벅이가 서울에 도달했다. 여의도 국회의사당을 거쳐 고진수 님이 있는 세종호텔에 도착했을 때 사람들을 맞이하는 연주를 했다. 구미에서 부터 걸어왔던 사람들이 고진수 님을 보고 다들 우셨다. (고진수 님은 복직투쟁을 위해 세종호텔 앞 지하차도 구조물 위에 올라가계신다) 희망 뚜벅이 일정을 마치면서 김지도(김진숙: 한진 중공업에서 해고 되고 85호 크레인, 고공농성 309일간 복직투쟁)가 연대발언을 하였다. 김지도의 발언을 들으면 커다른 나무 그늘 아래에 있는 기분이들었다. 거창하고 추상적인 언어가 아닌 손으로 일군, 단단하고 몸에 딱붙어있는 언어들.\n\n변화는 제일 낮은 곳에서 시작된다. 당장의 큰 변화가 눈에 보이지 않더라도, 매질을 옮겨다니며 진동한다. 황색망사점균처럼 매질을 옮겨다니며 변화를 내제하고 있다.", "date": "2025.03.01", "images": ["image/25.03.01.jpg"], "published": true, "sc": "", "title": "변화의 매질"}, "t20": {"audios": ["audio/25-03-25.mp3"], "body": "황색망사점균이 죽은 후 패트리 접시를 씻으려고 물에 담궈두었는데 agar(한천)이 벗겨지고 나니 황색망사점균의 네트워크가 패트리 접시에 남았다. 황색망사점균이 만든 지도이자 의사소통의 과정의 흔적처럼 느껴졌다. 황색망사점균이 확산해가는 모양새도 재미있지만 황색망사점균이 소멸해가는 과정을, 흔적을 보는 것도 흥미롭다. 계속해서 이동하는 황색망사점균은 달팽이가 지나고 남은 점액질처럼 길에 흔적을 남겼다. 모양새는 프랙탈 구조를 유지하면서 매번 달랐다. 이동의 흔적, 죽음의 흔적, 의사소통의 흔적. 흔적은 부재가 아니라 세계와 관계맺는 방식의 증거에 가까울지도 모르겠다.\n\n파면 선고가 점점 늦어지면서 뉴스도 시끄럽고, 주위에 사람들도 불안에 휩싸여있다. 전농트랙터가 다시 서울로 향하고 있다는 트위터를 보았고, 이번엔 집에만 있지 않고 남태령으로 향했다. 날이 좀 풀렸지만 산 중턱에 길은 여전히 매서웠다. 남태령으로 모인 사람들을 가두는 경찰차들. 노래를 부르며 '경찰은 차빼'라고 외치는 사람들. 까만 밤 하늘을 쳐다보며 사람들의 발언을 들었다. 사람들이 은박담요를 덮고 앉아 있었다. \n점균이 지나간 자리에 희미한 네트워크를 남기듯, 이 밤도 사람들 사이에, 나에게 어떤 흔적으로 남을 것이다.  전농의 트렉터가 서울로 간다면 윤석열은 파면 될 것이다. 막연히 그런 강한 믿음이 생겨났다.", "date": "2025.03.25", "images": ["image/25.03.25.jpg"], "published": true, "sc": "", "title": "과정의 흔적"}, "t22": {"body": "3월 말인데 날씨가 너무 춥다. 정말 밖에 나가고 싶지 않았는데 파블로프의 개처럼 토요일 오후가 되자 주섬주섬 악기를 챙기고 경복궁 동십자각으로 향한다. 이제는 익숙해져버린 동선과 깃발과 시간들, 그런데 좀처럼 추위는 익숙해지지가 않는다. 너무 추워서 입술이 파랗게 변했다.  오늘은 윤석열 파면 결정을 헌법재판소에 압박하기 위해 정말 많은 사람들이 모였다. 경복궁역에서 안국역까지 사람들이 가득했다. 정태춘씨가 무대에 올랐다. '92년 장마, 종로에서'를 듣는데 해가 전광판 뒤로 넘어갔다. 4개월이 넘는 시간동안 그렇게 안외워지던 클라리넷 악보들이 외워지게 되었다. 일상을 살다가도 매주 같은 시간에 다시 모이는 몸들 사이에서, 너무 추워도 악기를 챙겨 나오는 반복 속에서, 처음에는 낯설었던 민중가요와 구호가 내 몸에 새겨지는 시간을 보냈다.", "date": "2025.03.29", "published": false, "sc": "", "title": "92년 장마, 종로에서"}, "t24": {"body": "균근 네트워크(Mycorrhizal network)는 식물의 뿌리와 곰팡이가 공생하며 만들어내는 보이지 않는 연결망이다. 곰팡이의 균사는 토양 속에서 길게 뻗어나가며 여러 식물의 뿌리를 이어주는데 이 과정을 통해 숲속은 마치 하나의 거대한 공동체처럼 작동한다. \n균근 네트워크는 단순한 영양분의 흐름을 넘어, 식물들 사이의 신호전달 경로로도 작동한다. 어떤 개체가 해충이나 병원균의 공격을 받으면, 그 정보가 균사를 따라 다른 식물로 전달되어 방어 물질을 만든다. \n종종 다른 종 사이에서도 영양분이 교환된다. 이처럼 균근 네트워크는 숲속 개체들이 서로 고립된 존재가 아니라, 끊임없이 주고 받으며 살아가는 유기적 관계임을 보여준다. 이 현상은 '우드 와이드 웹'(wood wide web)이라고 불리며 숲은 하나의 거대한 연결체로 이해하려 한다. 균근 네트워크는 곧 숲의 언어이자 보이지 않는 혈관망이며, 생명들이 서로를 살려낼려는 방식으로 지구 생태계의 깊은 상호의존성을 드러내는 증거라고 할 수 있다. \n\n'우드 와이드 웹'(wood wide web)을 알게 된 후 장애 커뮤니티에 대해서 생각하게 되었다. '장애'는 자립이 아니라 '연립'(여럿이 어울려 섬, 또는 그렇게 서서 하나의 형태로 만듬)을 하게 만드는 커뮤니티이다. 장애인과 비장애인이 서로의 세포에 뿌리를 내려 같이 살아가야 한다. 장애는 늘 '둘레'를 만든다. 그 둘레엔 다양한 존재들이 들어설 수 있는 공간이 생긴다. 나는 그 둘레에서 편안함을 느끼기도 하고, 해방감을 느끼기고 하면서 7-8년의 시간을 보냈다. 장애는 결핍이 아니다. 장애는 나와 다른 존재를 필수적으로 품을 수 밖에 없는 생존의 조건이기도 하다. 물론 비장애인도 혼자 살아갈 수 없다. 비장애인도 수많은 의존의 연결망 안에  살아간다. wood wide web 시스템이 숲을 이루는 상호의존적 시스템인것처럼 '연립의 몸'은 다양한 소수성을 품을 수 있는 공간이 될 수 있지 않을까?", "date": "2025.02.15", "published": true, "sc": "", "title": "연립의 몸, 공동의 몸"}, "t25": {"body": "", "date": "", "published": false, "sc": "", "title": ""}, "t26": {"audios": ["audio/sample01.mp3"], "body": "", "date": "0001.01.01", "published": true, "sc": "", "title": ""}};
+var tcDefault={"main": "황색망사점균과 나의 배양일지", "sub": "점균과 나의 일상이 연루되어가는 기록. 2024년 12월부터"};
+var isAdm=false, curId=null, fs=13;
+var scale=0.7, tx=0, ty=0, dragging=false, sx=0, sy=0;
+
+// 데이터 로드
+var D={};
+(function(){
+  try{var s=localStorage.getItem(SK);if(s){var p=JSON.parse(s);Object.keys(DEFAULT).forEach(function(k){D[k]=p[k]||DEFAULT[k];});Object.keys(p).forEach(function(k){if(!D[k])D[k]=p[k];});}else{Object.keys(DEFAULT).forEach(function(k){D[k]=JSON.parse(JSON.stringify(DEFAULT[k]));});};}catch(e){Object.keys(DEFAULT).forEach(function(k){D[k]=JSON.parse(JSON.stringify(DEFAULT[k]));});}
+})();
+window.DATA=D;
+
+// Firebase 실시간 동기화 (PC/모바일 공통 데이터)
+function refreshTrigDates(){
+  document.querySelectorAll('.trig').forEach(function(el){
+    var id=el.getAttribute('data-id');
+    var d=window.DATA&&window.DATA[id];
+    if(d&&d.date) el.setAttribute('data-date',d.date);
+    else el.removeAttribute('data-date');
+  });
+}
+(function waitForFirebase(){
+  if(window.fbListenData){
+    window.fbListenData(function(remote){
+      if(remote){
+        Object.keys(remote).forEach(function(k){window.DATA[k]=remote[k];});
+        refreshTrigDates();
+        if(typeof curId==='string'&&document.getElementById('vov')&&document.getElementById('vov').classList.contains('open')){
+          openV(curId);
+        }
+      }
+    });
+  } else {
+    setTimeout(waitForFirebase,200);
+  }
+})();
+
+// 이미지 fetch
+fetch('media.json').then(function(r){return r.json();}).then(function(M){
+  Object.keys(M).forEach(function(k){
+    if(window.DATA[k]){
+      if(M[k].images&&M[k].images.length)window.DATA[k].images=M[k].images;
+      if(M[k].audios&&M[k].audios.length)window.DATA[k].audios=M[k].audios;
+    }
+  });
+}).catch(function(){});
+
+
+// 타이틀 카드
+var tcData=tcDefault;
+(function(){try{var s=localStorage.getItem(TCK);if(s)tcData=JSON.parse(s);}catch(e){}renderTC();})();
+function renderTC(){document.querySelector('.tc-main').textContent=tcData.main||'';document.querySelector('.tc-sub').textContent=tcData.sub||'';}
+function onTcard(){if(document.body.classList.contains('cmode'))return;if(isAdm)openTCE();}
+function openTCE(){document.getElementById('tcemain').value=tcData.main||'';document.getElementById('tcesub').value=tcData.sub||'';document.getElementById('tceov').classList.add('open');}
+function closeTCE(){document.getElementById('tceov').classList.remove('open');}
+function saveTCE(){tcData.main=document.getElementById('tcemain').value.trim();tcData.sub=document.getElementById('tcesub').value.trim();try{localStorage.setItem(TCK,JSON.stringify(tcData));}catch(e){}renderTC();closeTCE();showToast('저장 ✓');}
+document.getElementById('tceov').addEventListener('click',function(e){if(e.target===document.getElementById('tceov'))closeTCE();});
+
+// 폰트 크기
+// 카드 글자 고정 21px (조절 버튼 제거됨)
+function applyFS(n){fs=Math.max(10,Math.min(22,n));document.documentElement.style.setProperty('--tc-fs',fs+'px');var fsv=document.getElementById('fsval');if(fsv)fsv.textContent=fs;try{localStorage.setItem(FK,fs);}catch(e){}}
+function chFS(d){applyFS(fs+d);}
+
+// 트리거
+function onTrig(id,e){
+  if(document.body.classList.contains('cmode'))return;
+  e.stopPropagation();curId=id;
+  var m=window.DATA[id];
+  var hasContent=m&&(m.title||(m.images&&m.images.length)||(m.audios&&m.audios.length>0)||m.body);
+  if(!hasContent){if(isAdm)openE(id);return;}
+  if(m.published===false&&!isAdm)return;
+  openV(id);
+}
+
+// 보기
+function openV(id){
+  var m=window.DATA[id];
+  var onlyPhotos=!m.title&&!m.body&&(m.images&&m.images.length>0);
+  var vpop=document.getElementById('vpop');
+  if(onlyPhotos){vpop.classList.add('photo-only');}else{vpop.classList.remove('photo-only');}
+  var vdateEl=document.getElementById('vdate');
+  vdateEl.textContent=m.date||'';
+  vdateEl.style.display=m.date?'':'none';
+  var vtitleEl=document.getElementById('vtitle');
+  vtitleEl.textContent=m.title||'';
+  vtitleEl.style.display=m.title?'':'none';
+  var vbodyEl=document.getElementById('vbody');
+  vbodyEl.textContent=m.body||'';
+  vbodyEl.style.display=m.body?'':'none';
+  document.getElementById('vpub').textContent=m.published===false?'● 비공개':'';
+  var med=document.getElementById('vmed');med.innerHTML='';
+  if(m.images&&m.images.length){var solo=(!m.body&&!m.title);if(solo){m.images.forEach(function(s){var i=document.createElement('img');i.src=s;i.onclick=function(){openLB(s);};i.style.cssText='width:100%;height:auto;max-height:82vh;object-fit:cover;display:block;cursor:zoom-in;';med.appendChild(i);});}else{var g=document.createElement('div');g.className='igrid';m.images.forEach(function(s){var i=document.createElement('img');i.src=s;i.onclick=function(){openLB(s);};g.appendChild(i);});med.appendChild(g);}}
+  if(m.audios&&m.audios.length){m.audios.forEach(function(s){var a=document.createElement('audio');a.src=s;a.controls=true;med.appendChild(a);});}
+  document.getElementById('vov').classList.add('open');
+}
+function closeV(){document.getElementById('vov').classList.remove('open');document.getElementById('vpop').classList.remove('photo-only');}
+document.getElementById('vov').addEventListener('click',function(e){if(e.target===document.getElementById('vov'))closeV();});
+
+// 편집
+function openE(id){
+  if(!isAdm)return;curId=id;
+  if(!window.DATA[id])window.DATA[id]={date:'',title:'',body:'',sc:'',published:false,images:[],audios:[]};
+  var m=window.DATA[id];
+  document.getElementById('eh').textContent=m.title?'메모 수정':'새 메모';
+  var dv='';if(m.date){var p=m.date.replace(/-/g,'.').split('.');if(p.length===3)dv=p[0]+'-'+p[1].padStart(2,'0')+'-'+p[2].padStart(2,'0');}
+  document.getElementById('edt').value=dv;
+  document.getElementById('eti').value=m.title||'';
+  document.getElementById('ebo').value=m.body||'';
+  document.getElementById('epub').checked=m.published!==false;
+  document.getElementById('imgfn').innerHTML='';document.getElementById('audfn').innerHTML='';
+  var eixs=document.getElementById('eixs');eixs.innerHTML='';
+  (m.images||[]).forEach(function(s,i){var w=document.createElement('div');w.className='eixwrap';var img=document.createElement('img');img.src=s;var btn=document.createElement('button');btn.className='delbtn';btn.innerHTML='×';btn.onclick=function(e){e.stopPropagation();if(confirm('삭제할까요?')){window.DATA[curId].images.splice(i,1);saveData();openE(curId);}};w.appendChild(img);w.appendChild(btn);eixs.appendChild(w);});
+  eixs.style.display=(m.images&&m.images.length)?'flex':'none';
+  var eauds=document.getElementById('eauds');eauds.innerHTML='';
+  (m.audios||[]).forEach(function(s,i){var w=document.createElement('div');w.className='eaudwrap';var nm=document.createElement('span');nm.textContent='🔊 오디오 '+(i+1);var btn=document.createElement('button');btn.className='daudbtn';btn.textContent='삭제';(function(idx){btn.onclick=function(){if(confirm('삭제할까요?')){window.DATA[curId].audios.splice(idx,1);saveData();openE(curId);}}})(i);w.appendChild(nm);w.appendChild(btn);eauds.appendChild(w);});
+  eauds.style.display=(m.audios&&m.audios.length)?'flex':'none';
+  document.getElementById('eov').classList.add('open');
+}
+function closeE(){document.getElementById('eov').classList.remove('open');}
+document.getElementById('eov').addEventListener('click',function(e){if(e.target===document.getElementById('eov'))closeE();});
+function previewF(inp,tid){var el=document.getElementById(tid);el.innerHTML='';Array.from(inp.files).forEach(function(f){var d=document.createElement('div');d.className='fn';d.textContent='▸ '+f.name+' ('+Math.round(f.size/1024)+'KB)';el.appendChild(d);if(f.type.startsWith('image/')){var img=document.createElement('img');img.style.cssText='max-width:100%;max-height:100px;margin-top:4px;border:1px solid var(--bdr);display:block';var r=new FileReader();r.onload=function(e){img.src=e.target.result;};r.readAsDataURL(f);el.appendChild(img);}});}
+function saveE(){
+  var title=document.getElementById('eti').value.trim();
+  var dr=document.getElementById('edt').value,date=dr?dr.replace(/-/g,'.'):'';
+  var body=document.getElementById('ebo').value.trim(),pub=document.getElementById('epub').checked;
+  var imgF=document.getElementById('eimg').files,audF=[];
+  var btn=document.getElementById('esavbtn');btn.textContent='저장 중...';btn.disabled=true;
+  function rImg(f){return new Promise(function(res){var r=new FileReader();r.onload=function(e){var img=new Image();img.onload=function(){var M=1200,w=img.width,h=img.height;if(w>M||h>M){var ratio=M/Math.max(w,h);w=Math.round(w*ratio);h=Math.round(h*ratio);}var c=document.createElement('canvas');c.width=w;c.height=h;c.getContext('2d').drawImage(img,0,0,w,h);res(c.toDataURL('image/jpeg',.82));};img.src=e.target.result;};r.readAsDataURL(f);});}
+  function rAud(f){return new Promise(function(res){var r=new FileReader();r.onload=function(){res(r.result);};r.readAsDataURL(f);});}
+  Promise.all([Promise.all(Array.from(imgF).map(rImg)),Promise.all(Array.from(audF).map(rAud))]).then(function(res){
+    var ex=window.DATA[curId]||{};
+    window.DATA[curId]={date:date,title:title,body:body,sc:'',published:pub,images:res[0].length?res[0]:(ex.images||[]),audios:ex.audios||[]};
+  saveData();closeE();openV(curId);
+  refreshTrigDates();btn.textContent='저장';btn.disabled=false;
+  }).catch(function(e){alert('파일 오류. Chrome에서 로컬 파일로 열어주세요.');btn.textContent='저장';btn.disabled=false;});
+}
+
+
+// 파일 경로로 이미지/오디오 추가
+function addImgPath(){
+  var inp=document.getElementById('eimgpath');
+  var path=inp.value.trim();
+  if(!path)return;
+  if(!window.DATA[curId].images)window.DATA[curId].images=[];
+  window.DATA[curId].images.push(path);
+  saveData();
+  inp.value='';
+  openE(curId);
+}
+function addAudPath(){
+  var inp=document.getElementById('eaudpath');
+  var path=inp.value.trim();
+  if(!path)return;
+  if(!window.DATA[curId].audios)window.DATA[curId].audios=[];
+  window.DATA[curId].audios.push(path);
+  saveData();
+  inp.value='';
+  openE(curId);
+}
+
+// 배경 전환
+(function(){
+  var bi=parseInt(localStorage.getItem(BGK)||'0');
+  var img=document.getElementById('bgimg');
+  img.setAttribute('data-bg1',img.src);
+  if(bi===1){img.src=img.getAttribute('data-bg2');}
+  var btn=document.getElementById('bgbtn');
+  if(btn) btn.textContent='배경 '+(bi+1)+'/2 전환';
+})();
+function switchBg(){
+  if(!isAdm)return;
+  var img=document.getElementById('bgimg');
+  var bi=parseInt(localStorage.getItem(BGK)||'0');
+  var next=bi===0?1:0;
+  var bg1src=img.getAttribute('data-bg1')||img.src;
+  if(!img.getAttribute('data-bg1'))img.setAttribute('data-bg1',img.src);
+  var bg2src=img.getAttribute('data-bg2');
+  img.style.opacity='0';
+  setTimeout(function(){
+    img.src=next===0?img.getAttribute('data-bg1'):bg2src;
+    img.style.opacity='1';
+    localStorage.setItem(BGK,next);
+    var btn=document.getElementById('bgbtn');
+    if(btn) btn.textContent='배경 '+(next+1)+'/2 전환';
+    showToast('배경 '+(next+1)+' 전환 ✓');
+  },700);
+}
+
+// 저장
+function saveData(){
+  try{localStorage.setItem(SK,JSON.stringify(window.DATA));}catch(e){}
+  if(window.fbSaveData){
+    window.fbSaveData(window.DATA);
+    showToast('저장 ✓ (모든 기기에 반영됨)');
+  } else {
+    showToast('저장 ✓ (이 기기에만)');
+  }
+}
+
+// 관리자
+function openA(){document.getElementById('pwinp').value='';document.getElementById('pwerr').textContent='';document.getElementById('aov').classList.add('open');setTimeout(function(){document.getElementById('pwinp').focus();},100);}
+function closeA(){document.getElementById('aov').classList.remove('open');}
+function checkPw(){var v=document.getElementById('pwinp').value;if(v===ADMIN_PW){isAdm=true;document.body.classList.add('adm');closeA();}else{document.getElementById('pwerr').textContent='비밀번호가 맞지 않습니다.';document.getElementById('pwinp').value='';document.getElementById('pwinp').focus();}}
+function logoutAdmin(){isAdm=false;document.body.classList.remove('adm','cmode');document.getElementById('ccbtn').classList.remove('act');}
+var kCnt=0,kTimer=null;
+document.addEventListener('keydown',function(e){
+  if(document.getElementById('aov').classList.contains('open')||document.getElementById('eov').classList.contains('open'))return;
+  if(e.key.toLowerCase()==='a'&&!e.ctrlKey&&!e.metaKey&&!e.altKey){var tag=document.activeElement?document.activeElement.tagName:'';if(tag==='INPUT'||tag==='TEXTAREA')return;kCnt++;clearTimeout(kTimer);if(kCnt>=3){kCnt=0;openA();return;}kTimer=setTimeout(function(){kCnt=0;},1000);}
+  if(e.key==='Escape'){closeLB();closeV();closeE();}
+});
+if(location.hash==='#admin')window.addEventListener('load',function(){setTimeout(openA,400);});
+
+// 라이트박스
+function openLB(s){document.getElementById('limg').src=s;document.getElementById('lbox').classList.add('open');}
+function closeLB(){document.getElementById('lbox').classList.remove('open');}
+
+// 좌표
+function toggleCoord(){if(!isAdm)return;document.body.classList.toggle('cmode');document.getElementById('ccbtn').classList.toggle('act');}
+var scene=document.getElementById('scene'),badge=document.getElementById('cbadge');
+scene.addEventListener('mousemove',function(e){if(!document.body.classList.contains('cmode'))return;var r=scene.getBoundingClientRect(),x=Math.round((e.clientX-r.left)/scale),y=Math.round((e.clientY-r.top)/scale);badge.style.left=(e.clientX-r.left+14)+'px';badge.style.top=(e.clientY-r.top-32)+'px';badge.textContent='x:'+x+'  y:'+y;});
+scene.addEventListener('click',function(e){if(!document.body.classList.contains('cmode'))return;if(e.target.closest('.trig'))return;var r=scene.getBoundingClientRect(),x=Math.round((e.clientX-r.left)/scale),y=Math.round((e.clientY-r.top)/scale),txt='x:'+x+', y:'+y;if(navigator.clipboard)navigator.clipboard.writeText(txt).catch(function(){});badge.textContent='✓ '+txt;setTimeout(function(){badge.textContent='x:'+x+'  y:'+y;},1500);});
+
+// 내보내기
+function exportD(){try{var p={version:3,memos:window.DATA,tc:tcData};var b=new Blob([JSON.stringify(p,null,2)],{type:'application/json;charset=utf-8'});var u=URL.createObjectURL(b);var a=document.createElement('a');a.style.display='none';a.href=u;a.download='slimemold-data-'+new Date().toISOString().slice(0,10)+'.json';document.body.appendChild(a);a.click();setTimeout(function(){document.body.removeChild(a);URL.revokeObjectURL(u);},1000);showToast('내보내기 완료 ✓');}catch(e){alert('오류: '+e.message);}}
+
+// 저장소 초기화
+function resetLS(){if(!confirm('저장소를 초기화할까요?\n브라우저에 저장된 수정사항이 지워집니다.'))return;localStorage.removeItem(SK);localStorage.removeItem(TK);localStorage.removeItem(FK);localStorage.removeItem(TCK);localStorage.removeItem(BGK);showToast('초기화 완료');setTimeout(function(){location.reload();},1200);}
+
+// 토스트
+function showToast(msg){var t=document.getElementById('toast');t.textContent=msg;t.classList.add('show');setTimeout(function(){t.classList.remove('show');},2200);}
+
+// 패닝 & 줌
+function applyT(){scene.style.transform='translate('+tx+'px,'+ty+'px) scale('+scale+')';}
+window.addEventListener('load',function(){
+  // 트리거에 날짜 툴팁 주입 (localStorage 반영 후)
+  document.querySelectorAll('.trig').forEach(function(el){
+    var id=el.getAttribute('data-id');
+    var d=window.DATA&&window.DATA[id];
+    if(d&&d.date) el.setAttribute('data-date',d.date);
+    else el.removeAttribute('data-date');
+  });
+  var m=window.innerWidth<768;scale=m?window.innerWidth/1920:Math.min(0.7,window.innerWidth/1920*0.92);tx=(window.innerWidth-1920*scale)/2;ty=(window.innerHeight-1080*scale)/2;applyT();});
+document.body.addEventListener('mousedown',function(e){if(e.target.closest('.trig,.cb,.ov,#tceov,#aov,#fsgrp,#abadge,#lbox,#aentry,#tcard'))return;if(document.body.classList.contains('cmode'))return;dragging=true;sx=e.clientX-tx;sy=e.clientY-ty;document.body.classList.add('grab');});
+document.addEventListener('mousemove',function(e){if(!dragging)return;tx=e.clientX-sx;ty=e.clientY-sy;applyT();});
+document.addEventListener('mouseup',function(){dragging=false;document.body.classList.remove('grab');});
+document.body.addEventListener('wheel',function(e){if(e.target.closest('.pbox,#tceov,#aov,#vov,#eov'))return;e.preventDefault();scale=Math.max(.2,Math.min(3,scale+(e.deltaY>0?-.06:.06)));applyT();},{passive:false});
+function zoom(d){scale=Math.max(.2,Math.min(3,scale+d));applyT();}
+function resetV(){var m=window.innerWidth<768;scale=m?window.innerWidth/1920:Math.min(0.7,window.innerWidth/1920*0.92);tx=(window.innerWidth-1920*scale)/2;ty=(window.innerHeight-1080*scale)/2;applyT();}
+// 터치
+var ltd=0;
+document.body.addEventListener('touchstart',function(e){if(e.target.closest('.trig,.cb,.ov,#tceov,#aov,#lbox,#aentry'))return;if(e.touches.length===1){dragging=true;sx=e.touches[0].clientX-tx;sy=e.touches[0].clientY-ty;}else if(e.touches.length===2){dragging=false;ltd=Math.hypot(e.touches[0].clientX-e.touches[1].clientX,e.touches[0].clientY-e.touches[1].clientY);}e.preventDefault();},{passive:false});
+document.body.addEventListener('touchmove',function(e){if(e.target.closest('.pbox'))return;if(e.touches.length===1&&dragging){tx=e.touches[0].clientX-sx;ty=e.touches[0].clientY-sy;applyT();}else if(e.touches.length===2){var d=Math.hypot(e.touches[0].clientX-e.touches[1].clientX,e.touches[0].clientY-e.touches[1].clientY),mx=(e.touches[0].clientX+e.touches[1].clientX)/2,my=(e.touches[0].clientY+e.touches[1].clientY)/2,ns=Math.max(.2,Math.min(4,scale*d/ltd));tx=mx-(mx-tx)*(ns/scale);ty=my-(my-ty)*(ns/scale);scale=ns;applyT();ltd=d;}e.preventDefault();},{passive:false});
+document.body.addEventListener('touchend',function(e){
+  if(e.touches.length===0)dragging=false;
+  var trig=e.target.closest('.trig');
+  if(!trig)return;
+  e.stopPropagation();
+  e.preventDefault();
+  onTrig(trig.getAttribute('data-id'),e);
+},{passive:false});
+</script>
+</body>
+</html>
