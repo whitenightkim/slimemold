@@ -179,6 +179,7 @@ body.adm #vpop.photo-only .ebtn{display:inline-block !important;position:absolut
 <script type="module">
   import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
   import { getDatabase, ref, set, onValue } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-database.js";
+  import { getAuth, signInAnonymously } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
   const firebaseConfig = {
     apiKey: "AIzaSyBj99E7j48a8_SFWh9VSqEUMDuz_V5eqaY",
     authDomain: "slimemold-diary.firebaseapp.com",
@@ -190,6 +191,11 @@ body.adm #vpop.photo-only .ebtn{display:inline-block !important;position:absolut
   };
   const fbApp = initializeApp(firebaseConfig);
   const fbDb = getDatabase(fbApp);
+  const fbAuth = getAuth(fbApp);
+  // 익명 로그인 (쓰기 권한용)
+  signInAnonymously(fbAuth).then(function(){
+    window.fbAuthed = true;
+  }).catch(function(e){ console.warn('Firebase 익명 로그인 실패:', e); });
   window.fbSaveData = function(data){ set(ref(fbDb, 'memos'), data); };
   window.fbListenData = function(callback){ onValue(ref(fbDb, 'memos'), function(snap){ callback(snap.val()); }); };
 </script>
