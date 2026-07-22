@@ -408,12 +408,9 @@ function chFS(d){applyFS(fs+d);}
 function onTrig(id,e){
   if(document.body.classList.contains('cmode'))return;
   e.stopPropagation();curId=id;
-  if(id==='t33'){setBg(1);}
-  else{
-    var idNum=parseInt(id.replace('t',''));
-    if(idNum<=32){setBg(0);}
-    // t34 이후는 bg2 유지 (별도 처리 없음)
-  }
+  var idNum=parseInt(id.replace('t',''));
+  if(idNum<=32){setBg(0);}
+  else{setBg(1);}
   var m=window.DATA[id];
   var hasContent=m&&(m.title||(m.images&&m.images.length)||(m.audios&&m.audios.length>0)||m.body);
   if(!hasContent){if(isAdm)openE(id);else return;}
