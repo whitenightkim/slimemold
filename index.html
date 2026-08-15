@@ -533,12 +533,12 @@ function addAudPath(){
 
 // 배경 전환
 (function(){
-  var bi=parseInt(localStorage.getItem(BGK)||'0');
+  // 항상 bg1으로 시작 (localStorage 무시)
+  localStorage.setItem(BGK,'0');
   var img=document.getElementById('bgimg');
   img.setAttribute('data-bg1',img.src);
-  if(bi===1){img.src=img.getAttribute('data-bg2');}
   var btn=document.getElementById('bgbtn');
-  if(btn) btn.textContent='배경 '+(bi+1)+'/2 전환';
+  if(btn) btn.textContent='배경 1/2 전환';
 })();
 function setBg(n){
   var img=document.getElementById('bgimg');
